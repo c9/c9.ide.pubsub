@@ -14,12 +14,13 @@ define(function(require, exports, module) {
         var c9 = imports.c9;
         var ext = imports.ext;
 
+        var code = require("text!./pubsub-service.js");
+
         /***** Initialization *****/
 
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
 
-        var localServiceFile = options.localServiceFile;
         var extendToken = options.extendToken;
 
         var stream, api;
@@ -29,54 +30,44 @@ define(function(require, exports, module) {
             if (loaded) return;
             loaded = true;
 
-            if (localServiceFile)
-                return extend();
+            ext.loadRemotePlugin("pubsub", {
+                code: code,
+                extendToken: extendToken,
+                redefine: true
+            }, function(err, remote) {
+                if (err)
+                    return console.error(err);
 
-            require(["text!./pubsub-service.js"], function(code) {
-                extend(code);
-            });
+                api = remote;
 
-            function extend(code, file) {
-                ext.loadRemotePlugin("pubsub", {
-                    file: !code && "pubsub-service.js",
-                    code: code,
-                    extendToken: extendToken,
-                    redefine: true
-                }, function(err, remote) {
-                    if (err)
-                        return console.error(err);
+                api.subscribe(function(err, meta) {
+                    console.log("PubSub connected");
+                    if (err) {
+                        loaded = false;
+                        console.error(err);
+                        return;
+                    }
 
-                    api = remote;
+                    stream = meta.stream;
 
-                    api.subscribe(function(err, meta) {
-                        console.log("PubSub connected");
-                        if (err) {
-                            loaded = false;
-                            console.error(err);
-                            return;
+                    stream.on("data", function(chunk) {
+                        var message;
+                        try { message = JSON.parse(chunk); }
+                        catch (e) {
+                            return setTimeout(function(){
+                                loaded = false;
+                                load();
+                            }, 5000);
                         }
+                        console.log("PubSub message:", message);
+                        emit("message", message);
+                    });
 
-                        stream = meta.stream;
-
-                        stream.on("data", function(chunk) {
-                            var message;
-                            try { message = JSON.parse(chunk); }
-                            catch (e) {
-                                return setTimeout(function(){
-                                    loaded = false;
-                                    load();
-                                }, 5000);
-                            }
-                            console.log("PubSub message:", message);
-                            emit("message", message);
-                        });
-
-                        stream.on("close", function(){
-                            loaded = false;
-                        });
+                    stream.on("close", function(){
+                        loaded = false;
                     });
                 });
-            }
+            });
         }
 
         function unload() {
