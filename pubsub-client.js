@@ -1,5 +1,5 @@
 /**
- * File Finder module for the Cloud9 that uses nak
+ * PubSub module for the Cloud9 that's used to publish events to the client IDE
  *
  * @copyright 2012, Ajax.org B.V.
  * @license GPLv3 <http://www.gnu.org/licenses/gpl.txt>
@@ -19,64 +19,77 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
 
-        var stream;
+        var localServiceFile = options.localServiceFile;
+        var extendToken = options.extendToken;
+
+        var stream, api;
 
         var loaded = false;
         function load(){
             if (loaded) return;
             loaded = true;
 
-            ext.loadRemotePlugin("pubsub", {
-                code: require("text!./pubsub-service.js"),
-                redefine: true
-            }, function(err, remote) {
-                if (err)
-                    return console.error(err);
+            if (localServiceFile)
+                return extend();
 
-                api = remote;
-
-                api.subscribe(function(err, meta) {
-                    if (err) {
-                        loaded = false;
-                        console.error(err);
-                        return;
-                    }
-
-                    stream = meta.stream;
-
-                    stream.on("data", function(chunk) {
-                        try { var message = JSON.parse(chunk); }
-                        catch (e) {
-                            setTimeout(function(){
-                                loaded = false;
-                                load();
-                            }, 60000);
-                            return;
-                        }
-                        console.log("PubSub message:", message);
-                        emit("message", { message: message });
-                    });
-
-                    stream.on("close", function(){
-                        loaded = false;
-                    });
-                });
+            require(["text!./pubsub-service.js"], function(code) {
+                extend(code);
             });
 
-            c9.once("stateChange", function(e) {
-                if (e.state & c9.NETWORK) {
-                    load();
-                }
-                else {
-                    loaded = false;
-                }
-            }, plugin);
+            function extend(code, file) {
+                ext.loadRemotePlugin("pubsub", {
+                    file: !code && "pubsub-service.js",
+                    code: code,
+                    extendToken: extendToken,
+                    redefine: true
+                }, function(err, remote) {
+                    if (err)
+                        return console.error(err);
+
+                    api = remote;
+
+                    api.subscribe(function(err, meta) {
+                        console.log("PubSub connected");
+                        if (err) {
+                            loaded = false;
+                            console.error(err);
+                            return;
+                        }
+
+                        stream = meta.stream;
+
+                        stream.on("data", function(chunk) {
+                            var message;
+                            try { message = JSON.parse(chunk); }
+                            catch (e) {
+                                return setTimeout(function(){
+                                    loaded = false;
+                                    load();
+                                }, 5000);
+                            }
+                            console.log("PubSub message:", message);
+                            emit("message", message);
+                        });
+
+                        stream.on("close", function(){
+                            loaded = false;
+                        });
+                    });
+                });
+            }
+        }
+
+        function unload() {
+            console.warn("PubSub disconnected");
+            api = stream = null;
+            loaded = false;
         }
 
         /***** Methods *****/
 
         plugin.on("load", function(){
-            load();
+            c9.on("connect", load, plugin);
+            c9.on("disconnect", unload, plugin);
         });
 
         /***** Register and define API *****/
@@ -84,7 +97,22 @@ define(function(require, exports, module) {
         /**
          * Bridge To Communicate from CLI to IDE
          **/
-        plugin.freezePublicAPI({ });
+        plugin.freezePublicAPI({
+            _events: [
+                /**
+                 * Fires when a message is published to this user on this workspace.
+                 * @event error 
+                 * @param {Object} msg
+                 * @param {String} msg.channel
+                 * @param {String} msg.type
+                 * @param {String} msg.action
+                 * @param {Object} msg.body
+                 */
+                "message"
+            ],
+            
+            get connceted(){ return loaded && !!stream; },
+        });
 
         register(null, {
             pubsub: plugin
