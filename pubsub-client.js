@@ -102,7 +102,7 @@ define(function(require, exports, module) {
                 "message"
             ],
             
-            get connceted(){ return loaded && !!stream; },
+            get connected(){ return loaded && !!stream; },
         });
 
         register(null, {
