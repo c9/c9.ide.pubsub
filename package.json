@@ -9,14 +9,12 @@
         "url": "http://github.com/c9/c9.ide.pubsub.git"
     },
     "plugins": {
-        "plugin": {
-            "pubsub-client": {}
-        }
+        "pubsub-client": {}
     },
     "categories": [
         "core"
     ],
     "licenses": [
-        ""
+        "MIT"
     ]
 }
