@@ -42,6 +42,7 @@ define(function(require, exports, module) {
 
                 api.subscribe(function(err, meta) {
                     console.log("PubSub connected");
+                    emit("connected");
                     if (err) {
                         loaded = false;
                         console.error(err);
@@ -99,7 +100,11 @@ define(function(require, exports, module) {
                  * @param {String} msg.action
                  * @param {Object} msg.body
                  */
-                "message"
+                "message",
+                /**
+                 * Fires when the client is connected
+                 */
+                "connected"
             ],
             
             get connected(){ return loaded && !!stream; },
