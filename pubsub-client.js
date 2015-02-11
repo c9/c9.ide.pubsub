@@ -42,7 +42,7 @@ define(function(require, exports, module) {
 
                 api.subscribe(function(err, meta) {
                     console.log("PubSub connected");
-                    emit("connected");
+                    emit.sticky("connected");
                     if (err) {
                         loaded = false;
                         console.error(err);
