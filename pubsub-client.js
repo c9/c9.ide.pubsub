@@ -1,7 +1,7 @@
 /**
  * PubSub module for the Cloud9 that's used to publish events to the client IDE
  *
- * @copyright 2012, Ajax.org B.V.
+ * @copyright 2013, Ajax.org B.V.
  */
 define(function(require, exports, module) {
     main.consumes = ["c9", "Plugin", "ext"];
