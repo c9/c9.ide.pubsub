@@ -20,8 +20,6 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
 
-        var extendToken = options.extendToken;
-
         var stream, api;
 
         var loaded = false;
@@ -30,11 +28,9 @@ define(function(require, exports, module) {
             loaded = true;
 
             ext.loadRemotePlugin("pubsub", {
-                code: code,
-                extendToken: extendToken,
-                redefine: true
+                file: "c9.ide.pubsub/pubsub-service.js"
             }, function(err, remote) {
-                if (err)
+                if (!remote)
                     return console.error(err);
 
                 api = remote;
