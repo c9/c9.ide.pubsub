@@ -23,7 +23,7 @@ define(function(require, exports, module) {
         var loaded = false;
         var oldVfs = false;
         function load(oldVfs) {
-            if (loaded) return;
+            if (loaded && !oldVfs) return;
             loaded = true;
 
             ext.loadRemotePlugin("pubsub", {
