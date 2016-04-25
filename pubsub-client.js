@@ -13,28 +13,27 @@ define(function(require, exports, module) {
         var c9 = imports.c9;
         var ext = imports.ext;
 
-        var code = require("text!./pubsub-service.js");
-
         /***** Initialization *****/
 
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
 
-        var extendToken = options.extendToken;
-
         var stream, api;
 
         var loaded = false;
-        function load(){
+        var oldVfs = false;
+        function load(oldVfs) {
             if (loaded) return;
             loaded = true;
 
             ext.loadRemotePlugin("pubsub", {
-                code: code,
-                extendToken: extendToken,
-                redefine: true
+                file: oldVfs ? undefined : "c9.ide.pubsub/pubsub-service.js",
+                code: oldVfs ? require("text!./pubsub-service.js") : undefined
             }, function(err, remote) {
-                if (err)
+                if (!remote && !oldVfs)
+                    return load(true);
+                
+                if (!remote)
                     return console.error(err);
 
                 api = remote;
