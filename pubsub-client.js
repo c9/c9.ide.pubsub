@@ -53,7 +53,7 @@ define(function(require, exports, module) {
                         var message;
                         try { message = JSON.parse(chunk); }
                         catch (e) {
-                            return setTimeout(function(){
+                            return setTimeout(function() {
                                 loaded = false;
                                 load();
                             }, 5000);
@@ -62,7 +62,7 @@ define(function(require, exports, module) {
                         emit("message", message);
                     });
 
-                    stream.on("close", function(){
+                    stream.on("close", function() {
                         loaded = false;
                     });
                 });
@@ -77,7 +77,7 @@ define(function(require, exports, module) {
 
         /***** Methods *****/
 
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             c9.on("connect", load, plugin);
             c9.on("disconnect", unload, plugin);
         });
@@ -105,7 +105,7 @@ define(function(require, exports, module) {
                 "connected"
             ],
             
-            get connected(){ return loaded && !!stream; },
+            get connected() { return loaded && !!stream; },
         });
 
         register(null, {
